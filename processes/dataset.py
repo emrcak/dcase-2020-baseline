@@ -17,7 +17,7 @@ from tools.dataset_creation import get_annotations_files, \
     create_split_data, create_lists_and_frequencies
 from tools.file_io import load_settings_file, load_yaml_file, \
     load_numpy_object, dump_numpy_object
-from tools.features_log_mel_bands import feature_extraction
+from tools.features import feature_extraction, filter_word_inds
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
@@ -186,9 +186,14 @@ def extract_features(root_dir: str,
         data_file = load_numpy_object(data_file_name)
 
         # Extract the features.
-        features = feature_extraction(
-            data_file['audio_data'].item(),
-            **settings_features['process'])
+        if settings_features["feature_type"] == "mel_energy":
+            features = extract_log_mel_bands(
+                data_file['audio_data'].item(),
+                **settings_features['process'])
+        elif settings_features["feature_type"] == "word_ind_filtered":
+            features = filter_word_inds()
+        else:
+            raise("Feature type not implemented")
 
         # Populate the recarray data and dtypes.
         array_data = (data_file['file_name'].item(), )

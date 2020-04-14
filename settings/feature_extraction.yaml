@@ -7,6 +7,7 @@
 # =================================
 keep_raw_audio_data: No
 # -----------------------------------
+feature_type: word_ind_filtered  # [word_ind, word_ind_filtered, mel_energy]
 process:
   sr: 44100
   nb_fft: 1024

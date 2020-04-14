@@ -6,10 +6,10 @@ from librosa.feature import melspectrogram
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
-__all__ = ['feature_extraction']
+__all__ = ['extract_log_mel_bands', 'filter_word_inds']
 
 
-def feature_extraction(audio_data: np.ndarray,
+def extract_log_mel_bands(audio_data: np.ndarray,
                        sr: int,
                        nb_fft: int,
                        hop_size: int,
@@ -58,5 +58,8 @@ def feature_extraction(audio_data: np.ndarray,
         fmin=f_min, fmax=f_max, htk=htk, norm=norm).T
 
     return np.log(mel_bands + np.finfo(float).eps)
+
+def filter_word_inds():
+    pass
 
 # EOF
