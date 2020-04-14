@@ -54,7 +54,10 @@ def create_dataset(settings_dataset: MutableMapping[str, Any],
         settings_ann=settings_dataset['annotations'],
         dir_ann=dir_root.joinpath(
             settings_dirs_and_files['dataset'][
-                'annotations_dir']))
+                'annotations_dir']),
+        dir_cleanup=dir_root.joinpath(
+            settings_dirs_and_files['dataset'][
+                'cleanup_dir']))
     inner_logger.info('Done')
 
     # Get all captions

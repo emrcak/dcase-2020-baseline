@@ -11,9 +11,9 @@ import numpy as np
 
 from tools.csv_functions import read_csv_file
 from tools.captions_functions import get_sentence_words, \
-    clean_sentence, get_words_counter
+    clean_sentence, get_words_counter, filter_sentence
 from tools.file_io import load_numpy_object, load_audio_file, \
-    load_pickle_file, dump_numpy_object, dump_pickle_file
+    load_pickle_file, dump_numpy_object, dump_pickle_file, load_dat_file
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
@@ -311,6 +311,7 @@ def create_split_data(csv_split: MutableSequence[MutableMapping[str, str]],
                 chars_caption.append('<eos>')
 
             indices_words = [words_list.index(word) for word in words_caption]
+
             indices_chars = [chars_list.index(char) for char in chars_caption]
 
             # create the numpy object with all elements
@@ -353,7 +354,7 @@ def get_amount_of_file_in_dir(the_dir: Path) \
 
 
 def get_annotations_files(settings_ann: MutableMapping[str, Any],
-                          dir_ann: Path)\
+                          dir_ann: Path, dir_cleanup: Path)\
         -> Tuple[List[MutableMapping[str, Any]], List[MutableMapping[str, Any]]]:
     """Reads, process (if necessary), and returns tha annotations files.
 
@@ -374,15 +375,24 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
 
     caption_fields = [field_caption.format(c_ind) for c_ind in range(1, 6)]
 
+    cleanup_files = dir_cleanup.glob("*.dat")
+    words_to_filter = []
+    for cleanup_file in cleanup_files:
+        words_to_filter += load_dat_file(cleanup_file)
+
     for csv_entry in chain(csv_development, csv_evaluation):
         # Clean sentence to remove any spaces before punctuations.
 
         captions = [clean_sentence(
             csv_entry.get(caption_field),
             keep_case=True,
-            remove_punctuation=False,
+            remove_punctuation=True,
             remove_specials=False)
             for caption_field in caption_fields]
+
+        if words_to_filter != []:
+            captions = filter_sentence(captions, words_to_filter)
+
 
         if settings_ann['use_special_tokens']:
             captions = [f'<SOS> {caption} <EOS>' for caption in captions]
