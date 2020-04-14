@@ -12,7 +12,7 @@ dataset:
   development: &dev 'development'
   evaluation: &eva 'evaluation'
   features_dirs:
-    output: 'data_splits_lm'
+    output: 'data_splits_preplm'
     development: *dev
     evaluation: *eva
   audio_dirs:
@@ -21,7 +21,7 @@ dataset:
     development: *dev
     evaluation: *eva
   annotations_dir: 'clotho_csv_files'
-  pickle_files_dir: 'pickles_lm'
+  pickle_files_dir: 'pickles_preplm'
   cleanup_files_dir: 'cleanup_files'
   files:
     np_file_name_template: 'clotho_file_{audio_file_name}_{caption_index}.npy'
@@ -32,10 +32,10 @@ dataset:
 # -----------------------------------
 model:
   model_dir: 'models'
-  checkpoint_model_name: 'dcase_model_baseline.pt'
-  pre_trained_model_name: 'dcase_model_baseline_pre_trained.pt'
+  checkpoint_model_name: 'dcase_model_preplm.pt'
+  pre_trained_model_name: 'dcase_model_preplm_pre_trained.pt'
 # -----------------------------------
 logging:
   logger_dir: 'logging'
-  caption_logger_file: 'captions_baseline.txt'
+  caption_logger_file: 'captions_preplm.txt'
 # EOF

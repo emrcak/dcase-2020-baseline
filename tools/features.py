@@ -59,7 +59,14 @@ def extract_log_mel_bands(audio_data: np.ndarray,
 
     return np.log(mel_bands + np.finfo(float).eps)
 
-def filter_word_inds():
-    pass
+def filter_word_inds(words_ind, words_list, filter_mark):
+    feats_caption = np.zeros((len(words_ind), len(words_list) + 1), dtype=np.float32)  # +1 for the filter mark
+    for k in range(feats_caption.shape[0]):
+        if words_list[words_ind[k]] == filter_mark:
+            feats_caption[k, -1] = 1
+        else:
+            feats_caption[k, words_ind[k]] = 1
+
+    return feats_caption
 
 # EOF

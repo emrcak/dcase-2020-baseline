@@ -16,7 +16,7 @@ from tools.dataset_creation import get_annotations_files, \
     get_amount_of_file_in_dir, check_data_for_split, \
     create_split_data, create_lists_and_frequencies
 from tools.file_io import load_settings_file, load_yaml_file, \
-    load_numpy_object, dump_numpy_object
+    load_numpy_object, dump_numpy_object, load_dat_file, load_pickle_file
 from tools.features import extract_log_mel_bands, filter_word_inds
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
@@ -177,6 +177,19 @@ def extract_features(root_dir: str,
     dir_output_dev.mkdir(parents=True, exist_ok=True)
     dir_output_eva.mkdir(parents=True, exist_ok=True)
 
+    if settings_features["feature_type"] == "word_ind_filtered":
+        dir_cleanup = dir_root.joinpath(settings_data['cleanup_files_dir'])
+        cleanup_files = dir_cleanup.glob("*.dat")
+        words_to_filter = []
+        for cleanup_file in cleanup_files:
+            words_to_filter += load_dat_file(cleanup_file)
+
+        words_list = load_pickle_file(dir_root.joinpath(
+            settings_data['pickle_files_dir'],
+            settings_data['files']['words_list_file_name']))
+        words_list_filtered = [word if word not in words_to_filter else settings_features["word_filter_mark"] for word in words_list]
+
+
     # Apply the function to each file and save the result.
     for data_file_name in filter(
             lambda _x: _x.suffix == '.npy',
@@ -186,12 +199,14 @@ def extract_features(root_dir: str,
         data_file = load_numpy_object(data_file_name)
 
         # Extract the features.
-        if settings_features["feature_type"] == "mel_energy":
+        if settings_features["feature_type"] == "log_mel_energy":
             features = extract_log_mel_bands(
                 data_file['audio_data'].item(),
                 **settings_features['process'])
         elif settings_features["feature_type"] == "word_ind_filtered":
-            features = filter_word_inds()
+            if settings_features["word_filter_mark"] in words_list:
+                raise("[ERROR] Word filter mark present in words list. Please pick a different filter mark...")
+            features = filter_word_inds(data_file['words_ind'].item(), words_list_filtered, settings_features["word_filter_mark"])
         else:
             raise("Feature type not implemented")
 
