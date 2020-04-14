@@ -17,7 +17,7 @@ from tools.dataset_creation import get_annotations_files, \
     create_split_data, create_lists_and_frequencies
 from tools.file_io import load_settings_file, load_yaml_file, \
     load_numpy_object, dump_numpy_object
-from tools.features import feature_extraction, filter_word_inds
+from tools.features import extract_log_mel_bands, filter_word_inds
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
