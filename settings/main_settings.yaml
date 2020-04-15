@@ -14,7 +14,7 @@ dataset_creation_settings: !include dataset_creation.yaml
 # -----------------------------------
 feature_extraction_settings: !include feature_extraction.yaml
 # -----------------------------------
-dnn_training_settings: !include method_audio_no_prep.yaml
+dnn_training_settings: !include method_keywords.yaml
 # -----------------------------------
 dirs_and_files: !include dirs_and_files.yaml
 # EOF
