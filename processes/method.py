@@ -211,7 +211,7 @@ def _do_training(model: Module,
     :type indices_list: list[str]
     """
     # Initialize variables for the training process
-    prv_training_loss = 1e8
+    prv_validation_loss = 1e8
     patience: int = settings_training['patience']
     loss_thr: float = settings_training['loss_thr']
     patience_counter = 0
@@ -230,6 +230,13 @@ def _do_training(model: Module,
         settings_data=settings_data,
         settings_io=settings_io)
 
+    logger_main.info('Getting validation data')
+    validation_data = get_clotho_loader(
+         settings_io['dataset']['features_dirs']['evaluation'],
+        is_training=True,
+        settings_data=settings_data,
+        settings_io=settings_io)
+
     logger_main.info('Done')
 
     # Initialize loss and optimizer objects
@@ -240,13 +247,14 @@ def _do_training(model: Module,
     # Inform that we start training
     logger_main.info('Starting training')
 
-    model.train()
+
     for epoch in range(settings_training['nb_epochs']):
 
         # Log starting time
         start_time = time()
 
         # Do a complete pass over our training data
+        model.train()
         epoch_output = module_epoch_passing(
             data=training_data,
             module=model,
@@ -259,8 +267,21 @@ def _do_training(model: Module,
         # Get mean loss of training and print it with logger
         training_loss = objective_output.mean().item()
 
+        # Do a complete pass over our validation data
+        model.eval()
+        with no_grad():
+            epoch_output_v = module_epoch_passing(
+                data=validation_data,
+                module=model,
+                objective=objective,
+                optimizer=None)
+        objective_output_v, output_y_hat_v, output_y_v, f_names_v = epoch_output_v
+
+        # Get mean loss of training and print it with logger
+        validation_loss = objective_output_v.mean().item()
+
         logger_main.info(f'Epoch: {epoch:05d} -- '
-                         f'Training loss: {training_loss:>7.4f} | '
+                         f'Loss (Tr/Va) : {training_loss:>7.4f}/{validation_loss:>7.4f} | '
                          f'Time: {time() - start_time:>5.3f}')
 
         # Check if we have to decode captions for the current epoch
@@ -282,9 +303,9 @@ def _do_training(model: Module,
                             print_to_console=False)
 
         # Check improvement of loss
-        if prv_training_loss - training_loss > loss_thr:
+        if prv_validation_loss - validation_loss > loss_thr:
             # Log the current loss
-            prv_training_loss = training_loss
+            prv_validation_loss = validation_loss
 
             # Log the current epoch
             best_epoch = epoch
