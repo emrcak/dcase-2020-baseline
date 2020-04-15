@@ -7,7 +7,7 @@
 use_pre_trained_model: No
 # -----------------------------------
 encoder:
-  input_dim_encoder: 4368
+  input_dim_encoder: 4367
   hidden_dim_encoder: 64
   output_dim_encoder: 64
   dropout_p_encoder: .25

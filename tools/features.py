@@ -60,13 +60,18 @@ def extract_log_mel_bands(audio_data: np.ndarray,
     return np.log(mel_bands + np.finfo(float).eps)
 
 def filter_word_inds(words_ind, words_list, filter_mark):
-    feats_caption = np.zeros((len(words_ind), len(words_list) + 1), dtype=np.float32)  # +1 for the filter mark
-    for k in range(feats_caption.shape[0]):
-        if words_list[words_ind[k]] == filter_mark:
-            feats_caption[k, -1] = 1
-        else:
-            feats_caption[k, words_ind[k]] = 1
+    # Makes a binary matrix with one-hot columns marking the word indices. Only the words that pass the word filter
+    # are added as a row.
 
-    return feats_caption
+    feats_caption = []
+    for k in range(len(words_ind)):
+        feats_word = np.zeros((len(words_list)))
+        if words_list[words_ind[k]] == filter_mark:
+            continue
+        else:
+            feats_word[k] = 1
+        feats_caption.append(feats_word)
+
+    return np.vstack(feats_caption)
 
 # EOF
