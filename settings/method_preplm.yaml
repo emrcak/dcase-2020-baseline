@@ -16,8 +16,8 @@ data:
   drop_last: Yes
 # -----------------------------------
 training:
-  nb_epochs: 300
-  patience: 10
+  nb_epochs: 1000
+  patience: 30
   loss_thr: !!float 1e-4
   optimizer:
     lr: !!float 1e-4
