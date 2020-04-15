@@ -32,10 +32,10 @@ dataset:
 # -----------------------------------
 model:
   model_dir: 'models'
-  checkpoint_model_name: 'dcase_model_baseline.pt'
-  pre_trained_model_name: 'latest_dcase_model_baseline.pt'
+  checkpoint_model_name: 'dcase_model_audio_no_prep.pt'
+  pre_trained_model_name: 'latest_dcase_model_audio_no_prep.pt'
 # -----------------------------------
 logging:
   logger_dir: 'logging'
-  caption_logger_file: 'captions_baseline.txt'
+  caption_logger_file: 'captions_audio_no_prep.txt'
 # EOF

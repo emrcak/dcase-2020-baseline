@@ -139,6 +139,7 @@ def load_yaml_file(file_path: Path) \
     with file_path.open('r') as f:
         return yaml.load(f, Loader=yaml_loader.YAMLLoader)
 
+
 def load_dat_file(file_path: Path) \
         -> List:
     """Reads and returns the contents of a dat file.
