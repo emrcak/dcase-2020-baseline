@@ -11,10 +11,12 @@ root_dirs:
 dataset:
   development: &dev 'development'
   evaluation: &eva 'evaluation'
+  evaluation_keywords: &eva_kw 'evaluation_keywords'
   features_dirs:
     output: 'data_splits_preplm'
     development: *dev
     evaluation: *eva
+    evaluation_keywords: *eva_kw
   audio_dirs:
     downloaded: 'clotho_audio_files'
     output: 'data_splits_audio'
@@ -38,4 +40,9 @@ model:
 logging:
   logger_dir: 'logging'
   caption_logger_file: 'captions_preplm.txt'
+# -----------------------------------
+keywords:
+  predictions_dir: 'predictions'
+  words_list_file_name: 'words_list.p'
+
 # EOF

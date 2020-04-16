@@ -21,10 +21,71 @@ from tools.model import module_epoch_passing, get_model,\
 from data_handlers.clotho_loader import get_clotho_loader
 from eval_metrics import evaluate_metrics
 
+import numpy as np
+
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
 __all__ = ['method']
+
+def _convert_keywords_to_features(settings_io:  MutableMapping[str, Any],
+                                   indices_list: MutableSequence[str]):
+    keywords_list = file_io.load_pickle_file(Path(
+        settings_io['root_dirs']['outputs'],
+        settings_io['keywords']['predictions_dir'],
+        settings_io['keywords']['words_list_file_name']))
+
+
+    keywords_pred_dir = Path(
+        settings_io['root_dirs']['outputs'],
+        settings_io['keywords']['predictions_dir']
+    )
+
+    input_dir = Path(
+        settings_io['root_dirs']['data'],
+        settings_io['dataset']['features_dirs']['output'],
+        settings_io['dataset']['features_dirs']['evaluation'])
+
+    data_path_evaluation_keywords = Path(
+        settings_io['root_dirs']['data'],
+        settings_io['dataset']['features_dirs']['output'],
+        settings_io['dataset']['features_dirs']['evaluation_keywords'])
+    data_path_evaluation_keywords.mkdir(parents=True, exist_ok=True)
+
+    keywords_pred_files = keywords_pred_dir.glob('*.npy')
+    for f_name in keywords_pred_files:
+        input_data = file_io.load_numpy_object(input_dir.joinpath(f_name.name))
+        feats = input_data['features'][0]
+        preds = file_io.load_numpy_object(f_name)
+        feats_keywords = []
+        cur_pred = -1
+        for k in range(len(preds)):
+            feats_keyword = np.zeros((feats.shape[1]))
+            if preds[k] != cur_pred:
+                feats_keyword[indices_list.index(keywords_list[preds[k]])] = 1
+                #preds_converted.append(indices_list.index(keywords_list[preds[k]]))
+                cur_pred = preds[k]
+                feats_keywords.append(feats_keyword)
+
+        array_data = (input_data['file_name'].item(),)
+        dtypes = [('file_name', input_data['file_name'].dtype)]
+        array_data += (
+            np.vstack(feats_keywords),
+            input_data['caption'].item(),
+            input_data['caption_ind'].item(),
+            input_data['words_ind'].item(),
+            input_data['chars_ind'].item())
+        dtypes.extend([
+            ('features', np.dtype(object)),
+            ('caption', input_data['caption'].dtype),
+            ('caption_ind', input_data['caption_ind'].dtype),
+            ('words_ind', input_data['words_ind'].dtype),
+            ('chars_ind', input_data['chars_ind'].dtype)
+        ])
+        np_rec_array = np.rec.array([array_data], dtype=dtypes)
+
+        file_path = data_path_evaluation_keywords.joinpath(f_name.name)
+        file_io.dump_numpy_object(np_rec_array, file_path)
 
 
 def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
@@ -125,7 +186,8 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
 def _do_evaluation(model: Module,
                    settings_data:  MutableMapping[str, Any],
                    settings_io:  MutableMapping[str, Any],
-                   indices_list: MutableSequence[str]) \
+                   indices_list: MutableSequence[str],
+                   split: str) \
         -> None:
     """Evaluation of an optimized model.
 
@@ -142,18 +204,20 @@ def _do_evaluation(model: Module,
     data_path_evaluation = Path(
         settings_io['root_dirs']['data'],
         settings_io['dataset']['features_dirs']['output'],
-        settings_io['dataset']['features_dirs']['evaluation'])
+        settings_io['dataset']['features_dirs'][split])
+    if split == 'evaluation_keywords':
+        _convert_keywords_to_features(settings_io, indices_list)
 
-    logger_main.info('Getting evaluation data')
+    logger_main.info('Getting {} data'.format(split))
     validation_data = get_clotho_loader(
-        settings_io['dataset']['features_dirs']['evaluation'],
+        settings_io['dataset']['features_dirs'][split],
         is_training=False,
         settings_data=settings_data,
         settings_io=settings_io)
     logger_main.info('Done')
 
     text_sep = '-' * 100
-    starting_text = 'Starting evaluation on evaluation data'
+    starting_text = 'Starting evaluation on {} data'.format(split)
 
     logger_main.info(starting_text)
     logger.bind(is_caption=True, indent=0).info(
@@ -474,7 +538,20 @@ def method(settings: MutableMapping[str, Any]) \
             model=model,
             settings_data=settings['dnn_training_settings']['data'],
             settings_io=settings['dirs_and_files'],
-            indices_list=indices_list)
+            indices_list=indices_list,
+            split='development')
+        _do_evaluation(
+            model=model,
+            settings_data=settings['dnn_training_settings']['data'],
+            settings_io=settings['dirs_and_files'],
+            indices_list=indices_list,
+            split='evaluation')
+        _do_evaluation(
+            model=model,
+            settings_data=settings['dnn_training_settings']['data'],
+            settings_io=settings['dirs_and_files'],
+            indices_list=indices_list,
+            split='evaluation_keywords')
         logger_inner.info('Evaluation done')
 
 
