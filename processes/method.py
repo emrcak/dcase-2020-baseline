@@ -29,7 +29,7 @@ __all__ = ['method']
 
 def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
                     ground_truth_outputs: MutableSequence[Tensor],
-                    pred_save_path: Path,
+                    pred_save_dir: Path,
                     indices_object: MutableSequence[str],
                     file_names: MutableSequence[Path],
                     eos_token: str,
@@ -67,15 +67,16 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
     if print_to_console:
         main_logger.info(f'{text_sep}\n{text_sep}\n{text_sep}\n\n')
 
-    word_inds = []
 
     for gt_words, b_predictions, f_name in zip(
             ground_truth_outputs, predicted_outputs, file_names):
         predicted_words = softmax(b_predictions, dim=-1).argmax(1)
         try:
-            word_inds.append(predicted_words[:list(predicted_words).index(indices_object.index(eos_token))].numpy())
+            keyword_inds = predicted_words[:list(predicted_words).index(indices_object.index(eos_token))].numpy()
         except ValueError:
-            word_inds.append(predicted_words.numpy())
+            keyword_inds = predicted_words.numpy()
+
+        file_io.dump_numpy_object(keyword_inds, pred_save_dir.joinpath(str(f_name).split("/")[-1]))
 
         predicted_caption = [indices_object[i.item()]
                              for i in predicted_words]
@@ -128,8 +129,6 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
     logger.bind(is_caption=False, indent=0).info(
         'Decoding of captions ended')
 
-    file_io.dump_numpy_object(word_inds, pred_save_path)
-
     return captions_pred, captions_gt
 
 
@@ -177,15 +176,15 @@ def _do_evaluation(model: Module,
             data=validation_data, module=model,
             objective=None, optimizer=None)
 
-    pred_save_path = Path(
+    pred_save_dir = Path(
         settings_io['root_dirs']['outputs'],
-        settings_io['logging']['logger_dir'],
-        settings_io['logging']['predictions_file']
+        settings_io['logging']['predictions_dir']
     )
+    pred_save_dir.mkdir(parents=True, exist_ok=True)
     captions_pred, captions_gt = _decode_outputs(
         evaluation_outputs[1],
         evaluation_outputs[2],
-        pred_save_path,
+        pred_save_dir,
         indices_object=indices_list,
         file_names=sorted(list(data_path_evaluation.iterdir())),
         eos_token='<eos>',

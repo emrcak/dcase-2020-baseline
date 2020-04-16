@@ -38,5 +38,5 @@ model:
 logging:
   logger_dir: 'logging'
   caption_logger_file: 'captions_keywords.txt'
-  predictions_file: 'pred_keywords.npy'
+  predictions_dir: 'predictions'
 # EOF
