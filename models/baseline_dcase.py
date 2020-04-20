@@ -17,6 +17,7 @@ class BaselineDCASE(Module):
     def __init__(self,
                  input_dim_encoder: int,
                  hidden_dim_encoder: int,
+                 num_conv_layers_encoder: int,
                  output_dim_encoder: int,
                  dropout_p_encoder: float,
                  output_dim_h_decoder: int,
@@ -50,6 +51,7 @@ class BaselineDCASE(Module):
         self.encoder: Module = Encoder(
             input_dim=input_dim_encoder,
             hidden_dim=hidden_dim_encoder,
+            num_conv_layers=num_conv_layers_encoder,
             output_dim=output_dim_encoder,
             dropout_p=dropout_p_encoder)
 
