@@ -4,7 +4,7 @@
 # author: Konstantinos Drossos
 # affiliation: Tampere University
 # =================================
-model: !include model_keywords.yaml
+model: !include model_keywords_crnn.yaml
 # -----------------------------------
 data:
   input_field_name: 'features'
