@@ -20,6 +20,7 @@ annotations:
   remove_punctuation_chars: Yes
   use_unique_words_per_caption: No
   use_unique_chars_per_caption: No
+  word_filter_mark: "*"
 # -----------------------------------
 audio:
   sr: 44100

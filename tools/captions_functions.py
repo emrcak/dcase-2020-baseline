@@ -108,7 +108,7 @@ def get_words_counter(captions: MutableSequence[str],
     )
     return Counter(chain.from_iterable(map(partial_func, captions)))
 
-def filter_sentence(captions, words_to_filter):
+def filter_sentence(captions, words_to_filter, word_filter_mark):
 
     captions_filtered = []
     for caption in captions:
@@ -117,6 +117,8 @@ def filter_sentence(captions, words_to_filter):
         for word in words:
             if word.lower() not in words_to_filter:
                 tmp.append(word)
+            else:
+                tmp.append(word_filter_mark)
         captions_filtered.append(" ".join(w for w in tmp).capitalize())
 
     return captions_filtered

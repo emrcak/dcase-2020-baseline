@@ -372,6 +372,7 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
     csv_evaluation = read_csv_file(
         file_name=settings_ann['evaluation_file'],
         base_dir=dir_ann)
+    word_filter_mark = settings_ann['word_filter_mark']
 
     caption_fields = [field_caption.format(c_ind) for c_ind in range(1, 6)]
 
@@ -391,7 +392,7 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
             for caption_field in caption_fields]
 
         if words_to_filter != []:
-            captions = filter_sentence(captions, words_to_filter)
+            captions = filter_sentence(captions, words_to_filter, word_filter_mark)
 
 
         if settings_ann['use_special_tokens']:
