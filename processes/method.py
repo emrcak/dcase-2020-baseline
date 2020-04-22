@@ -253,7 +253,7 @@ def _do_training(model: Module,
     logger_main.info('Getting validation data')
     validation_data = get_clotho_loader(
          settings_io['dataset']['features_dirs']['evaluation'],
-        is_training=True,
+        is_training=False,
         settings_data=settings_data,
         settings_io=settings_io)
 
@@ -309,17 +309,15 @@ def _do_training(model: Module,
                   settings_training['text_output_every_nb_epochs'])[-1] == 0:
 
             # Get the subset of files for decoding their captions
-            sampling_indices = sorted(randperm(len(output_y_hat))
-                                      [:settings_training['nb_examples_to_sample']]
-                                      .tolist())
+            # sampling_indices = sorted(randperm(len(output_y_hat))
+            #                           [:settings_training['nb_examples_to_sample']]
+            #                           .tolist())
 
             # Do the decoding
-            captions_pred, captions_gt = _decode_outputs(*zip(*[[output_y_hat[i], output_y[i]]
-                                 for i in sampling_indices]),
+            captions_pred, captions_gt = _decode_outputs(output_y_hat_v, output_y_v,
                             pred_save_dir="",
                             indices_object=indices_list,
-                            file_names=[Path(f_names[i_f_name])
-                                        for i_f_name in sampling_indices],
+                            file_names=[Path(i) for i in f_names_v],
                             eos_token='<eos>',
                             print_to_console=False,
                             is_training=True)
