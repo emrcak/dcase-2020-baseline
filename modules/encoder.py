@@ -55,19 +55,19 @@ class Encoder(Module):
             'batch_first': True,
             'bidirectional': True}
 
-        self.cnn_1: Module = Conv2d(
-            in_channels=1,
-            out_channels=self.hidden_dim,
-            **cnn_common_args)
+        if self.num_conv_layers >= 1:
+            self.cnn_1: Module = Conv2d(
+                in_channels=1,
+                out_channels=self.hidden_dim,
+                **cnn_common_args)
+            self.leaky_relu = LeakyReLU()
+            self.pool: Module = MaxPool2d(kernel_size=2)
 
-
-        self.cnn_extra: Module = Conv2d(
-            in_channels=self.hidden_dim,
-            out_channels=self.hidden_dim,
-            **cnn_common_args)
-
-        self.leaky_relu = LeakyReLU()
-        self.pool: Module = MaxPool2d(kernel_size=2)
+        if self.num_conv_layers > 1:
+            self.cnn_extra: Module = Conv2d(
+                in_channels=self.hidden_dim,
+                out_channels=self.hidden_dim,
+                **cnn_common_args)
 
         self.gru_1: Module = GRU(
             input_size=self.rnn_input_dim,
