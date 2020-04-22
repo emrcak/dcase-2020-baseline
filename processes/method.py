@@ -33,7 +33,8 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
                     indices_object: MutableSequence[str],
                     file_names: MutableSequence[Path],
                     eos_token: str,
-                    print_to_console: bool) \
+                    print_to_console: bool,
+                    is_training: bool) \
         -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
     """Decodes predicted output to string.
 
@@ -76,7 +77,8 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
         except ValueError:
             keyword_inds = predicted_words.numpy()
 
-        file_io.dump_numpy_object(keyword_inds, pred_save_dir.joinpath(str(f_name).split("/")[-1]))
+        if not is_training:
+            file_io.dump_numpy_object(keyword_inds, pred_save_dir.joinpath(str(f_name).split("/")[-1]))
 
         predicted_caption = [indices_object[i.item()]
                              for i in predicted_words]
@@ -188,7 +190,8 @@ def _do_evaluation(model: Module,
         indices_object=indices_list,
         file_names=sorted(list(data_path_evaluation.iterdir())),
         eos_token='<eos>',
-        print_to_console=False)
+        print_to_console=False,
+        is_training=False)
 
     logger_main.info('Evaluation done')
 
@@ -227,7 +230,8 @@ def _do_training(model: Module,
     :type indices_list: list[str]
     """
     # Initialize variables for the training process
-    prv_validation_loss = 1e8
+    prv_validation_metric = 0
+    validation_metric = 0
     patience: int = settings_training['patience']
     loss_thr: float = settings_training['loss_thr']
     patience_counter = 0
@@ -310,18 +314,29 @@ def _do_training(model: Module,
                                       .tolist())
 
             # Do the decoding
-            _decode_outputs(*zip(*[[output_y_hat[i], output_y[i]]
+            captions_pred, captions_gt = _decode_outputs(*zip(*[[output_y_hat[i], output_y[i]]
                                  for i in sampling_indices]),
+                            pred_save_dir="",
                             indices_object=indices_list,
                             file_names=[Path(f_names[i_f_name])
                                         for i_f_name in sampling_indices],
                             eos_token='<eos>',
-                            print_to_console=False)
+                            print_to_console=False,
+                            is_training=True)
+
+            logger_main.info('Calculating metrics')
+            metrics = evaluate_metrics(captions_pred, captions_gt)
+
+            for metric, values in metrics.items():
+                logger_main.info(f'{metric:<7s}: {values["score"]:7.4f}')
+            logger_main.info('Calculation of metrics done')
+
+            validation_metric = metrics["spider"]["score"]
 
         # Check improvement of loss
-        if prv_validation_loss - validation_loss > loss_thr:
+        if validation_metric - prv_validation_metric > loss_thr:
             # Log the current loss
-            prv_validation_loss = validation_loss
+            prv_validation_metric = validation_metric
 
             # Log the current epoch
             best_epoch = epoch
@@ -349,9 +364,10 @@ def _do_training(model: Module,
 
         # Check for stopping criteria
         if patience_counter >= patience:
-            logger_main.info('No lower training loss for '
+            logger_main.info('No higher validation spider for '
                              f'{patience_counter} epochs. '
                              'Training stops.')
+            break
 
     # Inform that we are done
     logger_main.info('Training done')
