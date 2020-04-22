@@ -9,6 +9,7 @@ use_pre_trained_model: No
 encoder:
   input_dim_encoder: 64
   hidden_dim_encoder: 256
+  num_conv_layers_encoder: 0
   output_dim_encoder: 256
   dropout_p_encoder: .25
 # -----------------------------------
