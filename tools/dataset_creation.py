@@ -278,6 +278,9 @@ def create_split_data(csv_split: MutableSequence[MutableMapping[str, str]],
     captions_fields = [settings_ann['captions_fields_prefix'].format(i)
                        for i in range(1, int(settings_ann['nb_captions']) + 1)]
 
+    keywords_fields = [settings_ann['keywords_fields_prefix'].format(i)
+                       for i in range(1, int(settings_ann['nb_captions']) + 1)]
+
     # For each sound:
     for csv_entry in csv_split:
         file_name_audio = csv_entry[settings_ann['audio_file_column']]
@@ -289,9 +292,17 @@ def create_split_data(csv_split: MutableSequence[MutableMapping[str, str]],
 
         for caption_ind, caption_field in enumerate(captions_fields):
             caption = csv_entry[caption_field]
+            keywords = csv_entry[keywords_fields[caption_ind]]
 
             words_caption = get_sentence_words(
                 caption,
+                unique=settings_ann['use_unique_words_per_caption'],
+                keep_case=settings_ann['keep_case'],
+                remove_punctuation=settings_ann['remove_punctuation_words'],
+                remove_specials=not settings_ann['use_special_tokens'])
+
+            words_keywords = get_sentence_words(
+                keywords,
                 unique=settings_ann['use_unique_words_per_caption'],
                 keep_case=settings_ann['keep_case'],
                 remove_punctuation=settings_ann['remove_punctuation_words'],
@@ -311,13 +322,14 @@ def create_split_data(csv_split: MutableSequence[MutableMapping[str, str]],
                 chars_caption.append('<eos>')
 
             indices_words = [words_list.index(word) for word in words_caption]
+            indices_keywords = [words_list.index(keyword) for keyword in words_keywords]
 
             indices_chars = [chars_list.index(char) for char in chars_caption]
 
             # create the numpy object with all elements
             np_rec_array = np.rec.array(np.array(
                 (file_name_audio, audio, caption, caption_ind,
-                 np.array(indices_words), np.array(indices_chars)),
+                 np.array(indices_words), np.array(indices_chars), keywords, np.array(indices_keywords)),
                 dtype=[
                     ('file_name', f'U{len(file_name_audio)}'),
                     ('audio_data', np.dtype(object)),
@@ -325,7 +337,9 @@ def create_split_data(csv_split: MutableSequence[MutableMapping[str, str]],
                     ('caption_ind', 'i4'),
                     ('words_ind', np.dtype
                     (object)),
-                    ('chars_ind', np.dtype(object))
+                    ('chars_ind', np.dtype(object)),
+                    ('keywords', f'U{len(keywords)}'),
+                    ('keywords_ind', np.dtype(object))
                 ]))
 
             #  save the numpy object to disk
@@ -366,6 +380,7 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
     :rtype: list[collections.OrderedDict], list[collections.OrderedDict]
     """
     field_caption = settings_ann['captions_fields_prefix']
+    field_keywords = settings_ann['keywords_fields_prefix']
     csv_development = read_csv_file(
         file_name=settings_ann['development_file'],
         base_dir=dir_ann)
@@ -375,6 +390,7 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
     word_filter_mark = settings_ann['word_filter_mark']
 
     caption_fields = [field_caption.format(c_ind) for c_ind in range(1, 6)]
+    keyword_fields = [field_keywords.format(c_ind) for c_ind in range(1, 6)]
 
     cleanup_files = dir_cleanup.glob("*.dat")
     words_to_filter = []
@@ -392,7 +408,7 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
             for caption_field in caption_fields]
 
         if words_to_filter != []:
-            captions = filter_sentence(captions, words_to_filter, word_filter_mark)
+            keywords = filter_sentence(captions, words_to_filter, word_filter_mark)
 
 
         if settings_ann['use_special_tokens']:
@@ -400,6 +416,9 @@ def get_annotations_files(settings_ann: MutableMapping[str, Any],
 
         [csv_entry.update({caption_field: caption})
          for caption_field, caption in zip(caption_fields, captions)]
+
+        [csv_entry.update({keywords_field: keyword})
+         for keywords_field, keyword in zip(keyword_fields, keywords)]
 
     return csv_development, csv_evaluation
 

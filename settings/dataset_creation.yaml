@@ -13,6 +13,7 @@ annotations:
   evaluation_file: 'clotho_captions_evaluation.csv'
   audio_file_column: 'file_name'
   captions_fields_prefix: 'caption_{}'
+  keywords_fields_prefix: 'keywords_{}'
   use_special_tokens: Yes
   nb_captions: 5
   keep_case: No

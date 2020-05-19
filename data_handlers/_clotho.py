@@ -19,6 +19,7 @@ class ClothoDataset(Dataset):
                  split: str,
                  input_field_name: str,
                  output_field_name: str,
+                 output_keyword_field_name: str,
                  load_into_memory: bool) \
             -> None:
         """Initialization of a Clotho dataset object.
@@ -40,6 +41,7 @@ class ClothoDataset(Dataset):
         self.examples: List[Path] = sorted(the_dir.iterdir())
         self.input_name: str = input_field_name
         self.output_name: str = output_field_name
+        self.output_keyword_name: str = output_keyword_field_name
         self.load_into_memory: bool = load_into_memory
 
         if load_into_memory:
@@ -58,7 +60,7 @@ class ClothoDataset(Dataset):
 
     def __getitem__(self,
                     item: int) \
-            -> Tuple[ndarray, ndarray, Path]:
+            -> Tuple[ndarray, ndarray, ndarray, Path]:
         """Gets an example from the dataset.
 
         :param item: Index of the item.
@@ -70,9 +72,9 @@ class ClothoDataset(Dataset):
         if not self.load_into_memory:
             ex = np_load(str(ex), allow_pickle=True)
 
-        in_e, ou_e = [ex[i].item()
-                      for i in [self.input_name, self.output_name]]
+        in_e, ou_e, oku_e = [ex[i].item()
+                      for i in [self.input_name, self.output_name, self.output_keyword_name]]
 
-        return in_e, ou_e, ex.file_name[0]
+        return in_e, ou_e, oku_e, ex.file_name[0]
 
 # EOF

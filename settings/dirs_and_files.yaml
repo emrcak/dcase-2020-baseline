@@ -12,7 +12,7 @@ dataset:
   development: &dev 'development'
   evaluation: &eva 'evaluation'
   features_dirs:
-    output: 'data_splits_keywords_with_mark'
+    output: 'data_splits_sed_caps'
     development: *dev
     evaluation: *eva
   audio_dirs:
@@ -22,7 +22,7 @@ dataset:
     evaluation: *eva
   annotations_dir: 'clotho_csv_files'
   cleanup_files_dir: 'cleanup_files'
-  pickle_files_dir: 'pickles_keywords_with_mark'
+  pickle_files_dir: 'pickles_sed_caps'
   files:
     np_file_name_template: 'clotho_file_{audio_file_name}_{caption_index}.npy'
     words_list_file_name: 'words_list.p'
@@ -32,11 +32,11 @@ dataset:
 # -----------------------------------
 model:
   model_dir: 'models'
-  checkpoint_model_name: 'dcase_model_keywords_with_mark.pt'
-  pre_trained_model_name: 'latest_dcase_model_keywords_with_mark.pt'
+  checkpoint_model_name: 'dcase_model_sed_caps.pt'
+  pre_trained_model_name: 'latest_dcase_model_sed_caps.pt'
 # -----------------------------------
 logging:
   logger_dir: 'logging'
-  caption_logger_file: 'captions_keywords_with_mark.txt'
+  caption_logger_file: 'captions_sed_caps.txt'
   predictions_dir: 'predictions_with_mark'
 # EOF

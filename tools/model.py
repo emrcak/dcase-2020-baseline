@@ -12,7 +12,7 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.optim.optimizer import Optimizer
 
-from models import BaselineDCASE
+from models import BaselineDCASE, SEDCaps
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
@@ -59,7 +59,7 @@ def get_model(settings_model: MutableMapping[str, Union[str, MutableMapping]],
 
     kwargs = {**encoder_settings, **decoder_settings}
 
-    model = BaselineDCASE(**kwargs)
+    model = SEDCaps(**kwargs)
 
     if settings_model['use_pre_trained_model']:
         model.load_state_dict(pt_load(Path(
@@ -73,7 +73,7 @@ def get_model(settings_model: MutableMapping[str, Union[str, MutableMapping]],
 
 def module_epoch_passing(data: DataLoader,
                          module: Module,
-                         objective: Union[Callable[[Tensor, Tensor], Tensor], None],
+                         objective: List[Union[Callable[[Tensor, Tensor], Tensor], None]],
                          optimizer: Union[Optimizer, None],
                          grad_norm: Optional[int] = 1,
                          grad_norm_val: Optional[float] = -1.) \
@@ -106,7 +106,7 @@ def module_epoch_passing(data: DataLoader,
     f_names = []
 
     for i, example in enumerate(data):
-        y_hat, y, f_names_tmp = module_forward_passing(example, module)
+        y_hat, y_k_hat, y, y_k, f_names_tmp = module_forward_passing(example, module)
         f_names.extend(f_names_tmp)
         y = y[:, 1:]
         try:
@@ -119,8 +119,12 @@ def module_epoch_passing(data: DataLoader,
 
         try:
             y_hat = y_hat[:, :y.size()[1], :]
-            loss = objective(y_hat.contiguous().view(-1, y_hat.size()[-1]),
+            obj_caps, obj_sed = objective
+            loss_caps = obj_caps(y_hat.contiguous().view(-1, y_hat.size()[-1]),
                              y.contiguous().view(-1))
+            loss_sed = obj_sed(y_k_hat, y_k)
+            loss = loss_caps + loss_sed
+
 
             if has_optimizer:
                 if grad_norm_val > -1:
@@ -154,8 +158,8 @@ def module_forward_passing(data: MutableSequence[Tensor],
     :rtype: torch.Tensor, torch.Tensor, list[str]
     """
     device = next(module.parameters()).device
-    x, y, f_names = [i.to(device) if isinstance(i, Tensor)
+    x, y, y_k, f_names = [i.to(device) if isinstance(i, Tensor)
                      else i for i in data]
-    return module(x), y, f_names
+    return module(x)[0], module(x)[1], y, y_k, f_names
 
 # EOF

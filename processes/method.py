@@ -9,7 +9,7 @@ from typing import MutableMapping, MutableSequence,\
 
 from torch import Tensor, no_grad, save as pt_save, \
     load as pt_load, randperm
-from torch.nn import CrossEntropyLoss, Module
+from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss, Module
 from torch.optim import Adam
 from torch.nn.functional import softmax
 from loguru import logger
@@ -260,7 +260,7 @@ def _do_training(model: Module,
     logger_main.info('Done')
 
     # Initialize loss and optimizer objects
-    objective = CrossEntropyLoss()
+    objective = [CrossEntropyLoss(), BCEWithLogitsLoss()]
     optimizer = Adam(params=model.parameters(),
                      lr=settings_training['optimizer']['lr'])
 

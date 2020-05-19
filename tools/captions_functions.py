@@ -116,10 +116,10 @@ def filter_sentence(captions, words_to_filter, word_filter_mark):
         words = caption.split()
         for word in words:
             if word.lower() not in words_to_filter:
-                tmp.append(word)
-            else:
-                tmp.append(word_filter_mark)
-        captions_filtered.append(" ".join(w for w in tmp).capitalize())
+                tmp.append(word.lower())
+            # else:
+            #     tmp.append(word_filter_mark)
+        captions_filtered.append(" ".join(w for w in tmp))
 
     return captions_filtered
 # EOF
