@@ -117,10 +117,15 @@ def get_clotho_loader(split: str,
         input_field_name=settings_data['input_field_name'],
         output_field_name=settings_data['output_field_name'],
         output_keyword_field_name=settings_data['output_keyword_field_name'],
-        load_into_memory=settings_data['load_into_memory'])
+        load_into_memory=settings_data['load_into_memory'],
+        sort_per_target_length=settings_data.get('sort_per_target_length', False))
 
     shuffle = settings_data['shuffle'] if is_training else False
     drop_last = settings_data['drop_last'] if is_training else False
+
+    if shuffle and settings_data.get('sort_per_target_length', False):
+        raise("Shuffling the data after sorting per target length is probably unintended. Please comment this out"
+              "if it is not the case.")
 
     clotho_collator = ClothoCollator(settings_data, settings_io)
 

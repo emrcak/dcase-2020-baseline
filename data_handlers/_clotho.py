@@ -20,7 +20,8 @@ class ClothoDataset(Dataset):
                  input_field_name: str,
                  output_field_name: str,
                  output_keyword_field_name: str,
-                 load_into_memory: bool) \
+                 load_into_memory: bool,
+                 sort_per_target_length: bool) \
             -> None:
         """Initialization of a Clotho dataset object.
 
@@ -43,11 +44,20 @@ class ClothoDataset(Dataset):
         self.output_name: str = output_field_name
         self.output_keyword_name: str = output_keyword_field_name
         self.load_into_memory: bool = load_into_memory
+        self.sort_per_target_length: bool = sort_per_target_length
 
         if load_into_memory:
             self.examples: List[ndarray] = [
                 np_load(str(f), allow_pickle=True)
                 for f in self.examples]
+
+        if sort_per_target_length:
+            target_len = []
+            for k in self.examples:
+                ex = np_load(str(k), allow_pickle=True)
+                target_len.append(len(ex[self.output_name].item()))
+            sorted_inds = sorted(range(len(target_len)), key=target_len.__getitem__)
+            self.examples = [self.examples[k] for k in sorted_inds]
 
     def __len__(self) \
             -> int:
