@@ -78,7 +78,7 @@ def module_epoch_passing(data: DataLoader,
                          grad_norm: Optional[int] = 1,
                          grad_norm_val: Optional[float] = -1.,
                          sed_loss_weight: Optional[float] = 1.) \
-        -> Tuple[Tensor, List[Tensor], List[Tensor], List[str]]:
+        -> Tuple[Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor], List[str]]:
     """One full epoch passing.
 
     :param data: Data of the epoch.
@@ -104,6 +104,8 @@ def module_epoch_passing(data: DataLoader,
 
     output_y_hat = []
     output_y = []
+    output_y_k_hat = []
+    output_y_k = []
     f_names = []
 
     for i, example in enumerate(data):
@@ -113,6 +115,8 @@ def module_epoch_passing(data: DataLoader,
         try:
             output_y_hat.extend(y_hat.cpu())
             output_y.extend(y.cpu())
+            output_y_k_hat.extend(y_k_hat.cpu())
+            output_y_k.extend(y_k.cpu())
         except AttributeError:
             pass
         except TypeError:
@@ -124,7 +128,7 @@ def module_epoch_passing(data: DataLoader,
             loss_caps = obj_caps(y_hat.contiguous().view(-1, y_hat.size()[-1]),
                              y.contiguous().view(-1))
             loss_sed = obj_sed(y_k_hat, y_k)
-            loss = loss_caps + sed_loss_weight * loss_sed
+            loss = loss_caps + loss_sed
 
 
             if has_optimizer:
@@ -140,8 +144,7 @@ def module_epoch_passing(data: DataLoader,
         except TypeError:
             pass
 
-    return objective_output, output_y_hat, output_y, f_names
-
+    return objective_output, output_y_hat, output_y, output_y_k_hat, output_y_k, f_names
 
 def module_forward_passing(data: MutableSequence[Tensor],
                            module: Module) \

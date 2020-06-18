@@ -300,7 +300,7 @@ def _do_training(model: Module,
             grad_norm=settings_training['grad_norm']['norm'],
             grad_norm_val=settings_training['grad_norm']['value'],
             sed_loss_weight=settings_training.get('sed_loss_weight', 1.))
-        objective_output, output_y_hat, output_y, f_names = epoch_output
+        objective_output, output_y_hat, output_y, output_y_k_hat, output_y_k, f_names = epoch_output
 
         # Get mean loss of training and print it with logger
         training_loss = objective_output.mean().item()
@@ -313,7 +313,7 @@ def _do_training(model: Module,
                 module=model,
                 objective=objective,
                 optimizer=None)
-        objective_output_v, output_y_hat_v, output_y_v, f_names_v = epoch_output_v
+        objective_output_v, output_y_hat_v, output_y_v, output_y_k_hat_v, output_y_k_v, f_names_v = epoch_output_v
 
         # Get mean loss of training and print it with logger
         validation_loss = objective_output_v.mean().item()
