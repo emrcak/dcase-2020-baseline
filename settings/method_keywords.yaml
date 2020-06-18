@@ -13,7 +13,7 @@ data:
   load_into_memory: No
   batch_size: 32
   shuffle: Yes
-  num_workers: 6
+  num_workers: 10
   drop_last: Yes
 # -----------------------------------
 training:
@@ -28,4 +28,6 @@ training:
   force_cpu: No
   text_output_every_nb_epochs: !!int 1
   nb_examples_to_sample: 100
+  use_class_weights: True
+  clamp_value_freqs: 0.2
 # EOF

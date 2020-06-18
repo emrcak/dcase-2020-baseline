@@ -5,7 +5,7 @@ from pathlib import Path
 import pickle
 from time import time
 from typing import MutableMapping, MutableSequence,\
-    Any, Union, List, Dict, Tuple
+    Any, Union, List, Dict, Tuple, Optional
 
 from torch import Tensor, no_grad, save as pt_save, \
     load as pt_load, randperm
@@ -210,7 +210,8 @@ def _do_training(model: Module,
                      str, Union[Any, MutableMapping[str, Any]]],
                  model_file_name: str,
                  model_dir: Path,
-                 indices_list: MutableSequence[str]) \
+                 indices_list: MutableSequence[str],
+                 frequencies_list: Optional[Union[MutableSequence[int], None]] = None) \
         -> None:
     """Optimization of the model.
 
@@ -228,6 +229,9 @@ def _do_training(model: Module,
     :type model_dir: pathlib.Path
     :param indices_list: A sequence with the words.
     :type indices_list: list[str]
+    :param frequencies_list: A sequence with the frequencies of words.
+                         Defaults to None.
+    :type frequencies_list: list[int]|None, optional
     """
     # Initialize variables for the training process
     prv_validation_metric = 0
@@ -260,7 +264,20 @@ def _do_training(model: Module,
     logger_main.info('Done')
 
     # Initialize loss and optimizer objects
-    objective = [CrossEntropyLoss(), BCEWithLogitsLoss()]
+    if frequencies_list is not None:
+        frequencies_tensor: Union[Tensor, None] = Tensor(frequencies_list).to(
+    next(model.parameters()).device).float()
+    frequencies_tensor: Tensor = frequencies_tensor.max().div(frequencies_tensor)
+    frequencies_tensor: Tensor = frequencies_tensor.div(frequencies_tensor.max())
+    if settings_training['clamp_value_freqs'] > -1:
+        frequencies_tensor.clamp_(
+    settings_training['clamp_value_freqs'],
+    frequencies_tensor.max())
+    else:
+        frequencies_tensor = None
+
+    # Initialize loss and optimizer objects
+    objective = [CrossEntropyLoss(weight=frequencies_tensor), BCEWithLogitsLoss()]
     optimizer = Adam(params=model.parameters(),
                      lr=settings_training['optimizer']['lr'])
 
@@ -281,7 +298,8 @@ def _do_training(model: Module,
             objective=objective,
             optimizer=optimizer,
             grad_norm=settings_training['grad_norm']['norm'],
-            grad_norm_val=settings_training['grad_norm']['value'])
+            grad_norm_val=settings_training['grad_norm']['value'],
+            sed_loss_weight=settings_training.get('sed_loss_weight', 1.))
         objective_output, output_y_hat, output_y, f_names = epoch_output
 
         # Get mean loss of training and print it with logger
@@ -421,6 +439,28 @@ def _load_indices_file(settings_files: MutableMapping[str, Any],
         path.joinpath(settings_files['dataset']['files'][p_field]))
 
 
+def _load_frequencies_file(settings_files: MutableMapping[str, Any],
+                           settings_data: MutableMapping[str, Any]) \
+        -> MutableSequence[int]:
+    """Loads and returns the indices file.
+
+    :param settings_files: Settings of file i/o to be used.
+    :type settings_files: dict
+    :param settings_data: Settings of data to be used. .
+    :type settings_data: dict
+    :return: The indices file.
+    :rtype: list[int]
+    """
+    path = Path(
+        settings_files['root_dirs']['data'],
+        settings_files['dataset']['pickle_files_dir'])
+    p_field = 'words_counter_file_name' \
+        if settings_data['output_field_name'].startswith('words') \
+        else 'characters_frequencies_file_name'
+    return file_io.load_pickle_file(
+        path.joinpath(settings_files['dataset']['files'][p_field]))
+
+
 def method(settings: MutableMapping[str, Any]) \
         -> None:
     """Baseline method.
@@ -469,6 +509,15 @@ def method(settings: MutableMapping[str, Any]) \
         model.to(device)
         logger_inner.info('Done\n')
 
+        if settings['dnn_training_settings']['training']['use_class_weights']:
+            logger_inner.info('Getting class frequencies')
+            class_frequencies = _load_frequencies_file(
+                settings['dirs_and_files'],
+                settings['dnn_training_settings']['data'])
+            logger_inner.info('Class frequencies ready')
+        else:
+            class_frequencies = None
+
         logger_inner.info(f'Model:\n{model}\n')
         logger_inner.info('Total amount of parameters: '
                           f'{sum([i.numel() for i in model.parameters()])}')
@@ -480,7 +529,8 @@ def method(settings: MutableMapping[str, Any]) \
             settings_io=settings['dirs_and_files'],
             model_file_name=model_file_name,
             model_dir=model_dir,
-            indices_list=indices_list)
+            indices_list=indices_list,
+            frequencies_list=class_frequencies)
         logger_inner.info('Training done')
 
     if settings['workflow']['dnn_evaluation']:

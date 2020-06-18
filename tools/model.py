@@ -76,7 +76,8 @@ def module_epoch_passing(data: DataLoader,
                          objective: List[Union[Callable[[Tensor, Tensor], Tensor], None]],
                          optimizer: Union[Optimizer, None],
                          grad_norm: Optional[int] = 1,
-                         grad_norm_val: Optional[float] = -1.) \
+                         grad_norm_val: Optional[float] = -1.,
+                         sed_loss_weight: Optional[float] = 1.) \
         -> Tuple[Tensor, List[Tensor], List[Tensor], List[str]]:
     """One full epoch passing.
 
@@ -123,7 +124,7 @@ def module_epoch_passing(data: DataLoader,
             loss_caps = obj_caps(y_hat.contiguous().view(-1, y_hat.size()[-1]),
                              y.contiguous().view(-1))
             loss_sed = obj_sed(y_k_hat, y_k)
-            loss = loss_caps + loss_sed
+            loss = loss_caps + sed_loss_weight * loss_sed
 
 
             if has_optimizer:
