@@ -132,6 +132,7 @@ def module_epoch_passing(data: DataLoader,
 
 
             if has_optimizer:
+                optimizer.zero_grad()
                 if grad_norm_val > -1:
                     clip_grad_norm_(module.parameters(),
                                     max_norm=grad_norm_val,
