@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from torch import Tensor, max
+from torch import Tensor, max, sigmoid
 from torch.nn import Module, GRU, Linear, Dropout
 
 __author__ = 'Konstantinos Drossos'
@@ -55,7 +55,7 @@ class Decoder_sed(Module):
         :rtype: torch.Tensor
         """
         h = self.rnn(self.dropout(x))[0]
-        return self.classifier(max(h, 1)[0])
+        return max(self.classifier(h), 1)[0]
 
 
 # EOF
