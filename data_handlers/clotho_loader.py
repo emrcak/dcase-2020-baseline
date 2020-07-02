@@ -69,10 +69,9 @@ class ClothoCollator(object):
         eos_token = batch[0][1][-1]
 
         input_tensor = cat([
-            cat([zeros(
+            cat([from_numpy(i[0]).float(), zeros(
                 max_input_t_steps - i[0].shape[0],
-                input_features).float(),
-                 from_numpy(i[0]).float()]).unsqueeze(0) for i in batch])
+                input_features).float()]).unsqueeze(0) for i in batch])
 
         output_tensor = cat([
             cat([
