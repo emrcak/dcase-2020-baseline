@@ -7,9 +7,9 @@ from time import time
 from typing import MutableMapping, MutableSequence,\
     Any, Union, List, Dict, Tuple, Optional
 
-from torch import Tensor, no_grad, save as pt_save, \
+from torch import Tensor, IntTensor, no_grad, save as pt_save, \
     load as pt_load, randperm
-from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss, Module
+from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss, BCELoss, Module
 from torch.optim import Adam
 from torch.nn.functional import softmax
 from loguru import logger
@@ -137,7 +137,8 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
 def _do_evaluation(model: Module,
                    settings_data:  MutableMapping[str, Any],
                    settings_io:  MutableMapping[str, Any],
-                   indices_list: MutableSequence[str]) \
+                   indices_list: MutableSequence[str],
+                   subset: str) \
         -> None:
     """Evaluation of an optimized model.
 
@@ -154,18 +155,18 @@ def _do_evaluation(model: Module,
     data_path_evaluation = Path(
         settings_io['root_dirs']['data'],
         settings_io['dataset']['features_dirs']['output'],
-        settings_io['dataset']['features_dirs']['evaluation'])
+        settings_io['dataset']['features_dirs'][subset])
 
     logger_main.info('Getting evaluation data')
     validation_data = get_clotho_loader(
-        settings_io['dataset']['features_dirs']['evaluation'],
+        settings_io['dataset']['features_dirs'][subset],
         is_training=False,
         settings_data=settings_data,
         settings_io=settings_io)
     logger_main.info('Done')
 
     text_sep = '-' * 100
-    starting_text = 'Starting evaluation on evaluation data'
+    starting_text = 'Starting evaluation on {} data'.format(subset)
 
     logger_main.info(starting_text)
     logger.bind(is_caption=True, indent=0).info(
@@ -266,13 +267,13 @@ def _do_training(model: Module,
     # Initialize loss and optimizer objects
     if frequencies_list is not None:
         frequencies_tensor: Union[Tensor, None] = Tensor(frequencies_list).to(
-    next(model.parameters()).device).float()
-    frequencies_tensor: Tensor = frequencies_tensor.max().div(frequencies_tensor)
-    frequencies_tensor: Tensor = frequencies_tensor.div(frequencies_tensor.max())
-    if settings_training['clamp_value_freqs'] > -1:
-        frequencies_tensor.clamp_(
-    settings_training['clamp_value_freqs'],
-    frequencies_tensor.max())
+        next(model.parameters()).device).float()
+        frequencies_tensor: Tensor = frequencies_tensor.max().div(frequencies_tensor)
+        frequencies_tensor: Tensor = frequencies_tensor.div(frequencies_tensor.max())
+        if settings_training['clamp_value_freqs'] > -1:
+            frequencies_tensor.clamp_(
+        settings_training['clamp_value_freqs'],
+        frequencies_tensor.max())
     else:
         frequencies_tensor = None
 
@@ -554,7 +555,15 @@ def method(settings: MutableMapping[str, Any]) \
             model=model,
             settings_data=settings['dnn_training_settings']['data'],
             settings_io=settings['dirs_and_files'],
-            indices_list=indices_list)
+            indices_list=indices_list,
+        subset='development')
+
+        _do_evaluation(
+            model=model,
+            settings_data=settings['dnn_training_settings']['data'],
+            settings_io=settings['dirs_and_files'],
+            indices_list=indices_list,
+        subset='evaluation')
         logger_inner.info('Evaluation done')
 
 
